@@ -24,6 +24,13 @@ fn main() -> glib::ExitCode {
     app.run()
 }
 
+/// This is the synchronus way to make a button
+/// For short and simple task, it should be fine;
+/// however, if there is a heavy task that takes a few seconds,
+/// the button can freeze the application because
+/// the main loop is handling the main logic of the button,
+/// so the graphic can't be rendered
+///
 fn build_app_with_stuck_behavior( app: &Application ) {
 
     let button = build_button();
@@ -38,6 +45,13 @@ fn build_app_with_stuck_behavior( app: &Application ) {
     present_button_interface(app, &button, "Stuck Synchronus Call");
 }
 
+/// For that issue, we can always start a new thread to 
+/// relocate the main logic to somewhere else instead of 
+/// blocking the main loop.
+/// 
+/// This is not a perfect solution though, as users can keep on pressing the button,
+/// and submitting multiple threads that might introduces unwanted behaviors.
+/// 
 fn build_app_with_new_thread( app: &Application ) {
 
     let button = build_button();
@@ -56,6 +70,13 @@ fn build_app_with_new_thread( app: &Application ) {
     present_button_interface(app, &button, "Button with New Thread");
 }
 
+/// Hence, we need a MainContext.
+/// To do this, we need to send some signal (boolean in this cause) to the main event loop,
+/// then use the attach function from the receiver to change the button status
+/// 
+/// @default-return Continue(false) use for preventing callback when the weak reference fails to be updated
+/// Otherwise, we call the closure to maniplute the clickability of the button.
+/// 
 fn build_app_with_new_thead_and_button_disable( app: &Application ){
 
     // however, nothing can prevent from user spawning new thread indefinitely. 
@@ -94,6 +115,9 @@ fn build_app_with_new_thead_and_button_disable( app: &Application ){
 
 }
 
+/// It is possible use MainContext in an async fashion by using spawn_local function,
+/// to prevent the process from freezing by a button, without the additional thread.
+/// 
 fn build_app_with_async_button( app: &Application ) {
     
     let button = build_button();
@@ -116,6 +140,7 @@ fn build_app_with_async_button( app: &Application ) {
     present_button_interface(app, &button, "Async Button");
 }
 
+/// The following are the refactored function that are used for reducing repatitive code
 fn build_button() -> Button{
     // button for demonstracting the event loop
     let button = Button::builder()
